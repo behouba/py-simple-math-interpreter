@@ -1,80 +1,102 @@
+from tokenize import Token
 from tokens import TokenType
 from nodes import *
 
+
 class Parser:
-	def __init__(self, tokens):
-		self.tokens = iter(tokens)
-		self.advance()
+  def __init__(self, tokens):
+    self.tokens = iter(tokens)
+    self.advance()
 
-	def raise_error(self):
-		raise Exception("Invalid syntax")
-	
-	def advance(self):
-		try:
-			self.current_token = next(self.tokens)
-		except StopIteration:
-			self.current_token = None
+  def advance(self):
+    try:
+      self.current_token = next(self.tokens)
+    except StopIteration:
+      self.current_token = None
+  
+  def parse(self):
+    if self.current_token == None:
+      return None
 
-	def parse(self):
-		if self.current_token == None:
-			return None
+    result = self.bool_expr()
 
-		result = self.expr()
+    if self.current_token != None:
+      raise Exception("Unparsed tokens left")
 
-		if self.current_token != None:
-			self.raise_error()
+    return result
+    
 
-		return result
+  def bool_expr(self): # Assignement 3
+    result = self.expr()
 
-	def expr(self):
-		result = self.term()
+    while self.current_token != None and self.current_token.type in (TokenType.EQUAL, TokenType.GT, TokenType.GE, TokenType.LT, TokenType.LE):
+      if self.current_token.type == TokenType.EQUAL:
+        self.advance()
+        result = EqualNode(result, self.expr())
+      elif self.current_token.type == TokenType.GT:
+        self.advance()
+        result = GreaterNode(result, self.expr())
+      elif self.current_token.type == TokenType.GE:
+        self.advance()
+        result = GreaterOrEqualNode(result, self.expr())
+      elif self.current_token.type == TokenType.LT:
+        self.advance()
+        result = LessNode(result, self.expr())
+      elif self.current_token.type == TokenType.LE:
+        self.advance()
+        result = LessOrEqualNode(result, self.expr())
+    
+    return result
+  
 
-		while self.current_token != None and self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
-			if self.current_token.type == TokenType.PLUS:
-				self.advance()
-				result = AddNode(result, self.term())
-			elif self.current_token.type == TokenType.MINUS:
-				self.advance()
-				result = SubtractNode(result, self.term())
 
-		return result
+  def expr(self):
+    result = self.term()
+    
+    while self.current_token != None and self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
+      if self.current_token.type == TokenType.PLUS:
+        self.advance()
+        result = AddNode(result, self.term())
+      elif self.current_token.type == TokenType.MINUS:
+        self.advance()
+        result = SubtractNode(result, self.term())
 
-	def term(self):
-		result = self.factor()
+      
+    return result
 
-		while self.current_token != None and self.current_token.type in (TokenType.MULTIPLY, TokenType.DIVIDE):
-			if self.current_token.type == TokenType.MULTIPLY:
-				self.advance()
-				result = MultiplyNode(result, self.factor())
-			elif self.current_token.type == TokenType.DIVIDE:
-				self.advance()
-				result = DivideNode(result, self.factor())
-				
-		return result
+  def term(self):
+    result = self.factor()
+    
 
-	def factor(self):
-		token = self.current_token
+    while self.current_token != None and self.current_token.type in (TokenType.MULTIPLY, TokenType.DIVIDE):
+      if self.current_token.type == TokenType.MULTIPLY:
+        self.advance()
+        result = MultiplyNode(result, self.factor())
+      elif self.current_token.type == TokenType.DIVIDE:
+        self.advance()
+        result = DivideNode(result, self.factor())
 
-		if token.type == TokenType.LPAREN:
-			self.advance()
-			result = self.expr()
+    return result
+  
+  def factor(self):
+    token = self.current_token
+    
 
-			if self.current_token.type != TokenType.RPAREN:
-				self.raise_error()
-			
-			self.advance()
-			return result
+    if self.current_token.type == TokenType.LPAREN:
+      self.advance()
+      result = self.expr()
 
-		elif token.type == TokenType.NUMBER:
-			self.advance()
-			return NumberNode(token.value)
+      if self.current_token.type != TokenType.RPAREN:
+        raise Exception("Invalid/Unbalanced parentheses")
 
-		elif token.type == TokenType.PLUS:
-			self.advance()
-			return PlusNode(self.factor())
-		
-		elif token.type == TokenType.MINUS:
-			self.advance()
-			return MinusNode(self.factor())
-		
-		self.raise_error()
+      self.advance()
+      return result
+
+
+    if self.current_token.type == TokenType.NUMBER:
+      self.advance()
+      return NumberNode(token.value)
+
+
+    raise Exception(f"Invalid factor _token: {self.current_token}")
+  

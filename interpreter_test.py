@@ -1,44 +1,109 @@
 import unittest
 from nodes import *
 from interpreter import Interpreter
-from values import Number
+from values import Bool, Number
 
 class TestInterpreter(unittest.TestCase):
 
-	def test_numbers(self):
-		value = Interpreter().visit(NumberNode(51.2))
-		self.assertEqual(value, Number(51.2))
+  def test_empty(self):
+    with self.assertRaises(Exception):
+      value = Interpreter().visit(None)
+    
+  def test_number(self):
+    value = Interpreter().visit(NumberNode(21.2))
 
-	def test_single_operations(self):
-		result = Interpreter().visit(AddNode(NumberNode(27), NumberNode(14)))
-		self.assertEqual(result.value, 41)
+    self.assertEqual(value,Number(21.2))
 
-		result = Interpreter().visit(SubtractNode(NumberNode(27), NumberNode(14)))
-		self.assertEqual(result.value, 13)
+  def test_expression(self):
+    # 5 - 3/3 * 10.0
+    value = Interpreter().visit(
+      SubtractNode(
+        NumberNode(5),
+        MultiplyNode(
+          DivideNode(
+            NumberNode(3),
+            NumberNode(3)
+          ),
+          NumberNode(10)
+        )
+      )
+    )
 
-		result = Interpreter().visit(MultiplyNode(NumberNode(27), NumberNode(14)))
-		self.assertEqual(result.value, 378)
+    self.assertEqual(value, Number(-5))
 
-		result = Interpreter().visit(DivideNode(NumberNode(27), NumberNode(14)))
-		self.assertAlmostEqual(result.value, 1.92857, 5)
+# Assignement 3
+  def test_equal_comparison(self):
+    # 5 == 5
+    value = Interpreter().visit(
+      EqualNode(
+        NumberNode(5),
+        NumberNode(5)
+      )
+    )
 
-		with self.assertRaises(Exception):
-			Interpreter().visit(DivideNode(NumberNode(27), NumberNode(0)))
-			
-	def test_full_expression(self):
-		tree = AddNode(
-			NumberNode(27),
-			MultiplyNode(
-				SubtractNode(
-					DivideNode(
-						NumberNode(43),
-						NumberNode(36)
-					),
-					NumberNode(48)
-				),
-				NumberNode(51)
-			)
-		)
+    self.assertEqual(value, Bool(True))
 
-		result = Interpreter().visit(tree)
-		self.assertAlmostEqual(result.value, -2360.08, 2)
+
+  def test_greater_comparison(self):
+    # 6 > 2
+    value = Interpreter().visit(
+      GreaterNode(
+       NumberNode(6),
+       NumberNode(2)
+      )
+    )
+
+    self.assertEqual(value, Bool(True))
+
+
+  def test_greater_or_equal_comparison(self):
+    # 6 >= 2
+    value = Interpreter().visit(
+      GreaterOrEqualNode(
+       NumberNode(6),
+       NumberNode(2)
+      )
+    )
+
+    self.assertEqual(value, Bool(True))
+
+  def test_less_comparison(self):
+    # 2 < 6
+    value = Interpreter().visit(
+      LessNode(
+       NumberNode(2),
+       NumberNode(6)
+      )
+    )
+
+    self.assertEqual(value, Bool(True))
+
+  def test_less_or_equal_comparison(self):
+    # 2 =< 6
+    value = Interpreter().visit(
+      LessOrEqualNode(
+       NumberNode(2),
+       NumberNode(6)
+      )
+    )
+
+    self.assertEqual(value, Bool(True))
+
+
+
+  def test_operations_and_comparison(self):
+    # 7 * 10 > 7 + 10
+    value = Interpreter().visit(
+      GreaterNode(
+        MultiplyNode(
+          NumberNode(7),
+          NumberNode(10)
+        ),
+        AddNode(
+          NumberNode(7),
+          NumberNode(10)
+        )
+      )
+    )
+
+    self.assertEqual(value, Bool(True))
