@@ -1,4 +1,4 @@
-# Python - Simple Math Interpreter
+# Python - Simple Math Interpreter (Extended with support for comparison of decimals using <, =<, ==, >, and >= operators.).
 
 An interpreter, written from scratch in Python, that can evaluate simple math calculations.
 
